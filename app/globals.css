@@ -1,26 +1,596 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Design tokens
+   Everything scales from the viewport. Type and space use clamp() with a vw
+   term so the layout is fluid between breakpoints rather than snapping at
+   them — desktop and tablet get the same continuous curve.
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --- palette -------------------------------------------------------- */
+  --ink: #08080a;
+  --ink-raised: #0e0e12;
+  --ink-sunken: #050507;
+  --paper: #f4f2ee;
+  --muted: #96959e;
+  --line: color-mix(in oklab, var(--paper) 12%, transparent);
+  --line-strong: color-mix(in oklab, var(--paper) 22%, transparent);
+
+  --accent: #d6ff3f;
+  --accent-ink: #14180a;
+  --accent-2: #7c5cff;
+
+  /* --- fluid type scale ----------------------------------------------- */
+  --step--1: clamp(0.78rem, 0.74rem + 0.18vw, 0.9rem);
+  --step-0: clamp(0.95rem, 0.9rem + 0.25vw, 1.1rem);
+  --step-1: clamp(1.15rem, 1.05rem + 0.5vw, 1.45rem);
+  --step-2: clamp(1.4rem, 1.2rem + 1vw, 2rem);
+  --step-3: clamp(1.8rem, 1.4rem + 1.9vw, 3rem);
+  --step-4: clamp(2.3rem, 1.6rem + 3.2vw, 4.5rem);
+  --step-5: clamp(2.9rem, 1.6rem + 5.6vw, 7rem);
+  --step-6: clamp(3.4rem, 1.2rem + 9vw, 11rem);
+
+  /* --- space ---------------------------------------------------------- */
+  --gap-xs: clamp(0.4rem, 0.5vw, 0.7rem);
+  --gap-sm: clamp(0.7rem, 1vw, 1.1rem);
+  --gap-md: clamp(1.1rem, 1.8vw, 2rem);
+  --gap-lg: clamp(1.8rem, 3.2vw, 3.6rem);
+  --gap-xl: clamp(3rem, 6vw, 6.5rem);
+
+  --shell-max: 88rem;
+  --shell-pad: clamp(1.15rem, 4.5vw, 5rem);
+  --section-y: clamp(4.5rem, 11vh, 10rem);
+
+  /* --- motion --------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 220ms;
+  --dur-mid: 520ms;
+  --dur-slow: 900ms;
+
+  --radius: clamp(0.75rem, 1.2vw, 1.25rem);
+  --radius-lg: clamp(1.1rem, 2vw, 2rem);
+
+  color-scheme: dark;
 }
 
+/* Map tokens onto Tailwind's theme so utilities and tokens stay in sync. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-ink-raised: var(--ink-raised);
+  --color-paper: var(--paper);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+* {
+  min-width: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Offset anchor targets so the fixed header never covers a heading. */
+  scroll-padding-top: clamp(4.5rem, 9vh, 6.5rem);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--step-0);
+  line-height: 1.6;
+  /* Vertical scrolling only — no horizontal jitter from off-canvas art. */
+  overflow-x: clip;
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* Bootstrap's grid ships `.container` too — we use our own wrapper so the two
+   never fight. Bootstrap handles `.row`/`.col-*` only. */
+.shell {
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  padding-inline: var(--shell-pad);
+}
+
+.section {
+  padding-block: var(--section-y);
+  position: relative;
+}
+
+/* Fluid gutters for the Bootstrap rows we do use. */
+.row {
+  --bs-gutter-x: var(--gap-md);
+  --bs-gutter-y: var(--gap-md);
+}
+
+/* ==========================================================================
+   Typography helpers
+   ========================================================================== */
+
+.display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+}
+
+.h-xl {
+  font-size: var(--step-6);
+}
+.h-lg {
+  font-size: var(--step-5);
+}
+.h-md {
+  font-size: var(--step-4);
+}
+.h-sm {
+  font-size: var(--step-3);
+}
+
+.eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: var(--step--1);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.lede {
+  font-size: var(--step-1);
+  line-height: 1.5;
+  color: color-mix(in oklab, var(--paper) 78%, transparent);
+  text-wrap: pretty;
+}
+
+.balance {
+  text-wrap: balance;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.accent {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   Surfaces
+   ========================================================================== */
+
+.card {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--paper) 6%, transparent),
+    color-mix(in oklab, var(--paper) 2%, transparent)
+  );
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  /* Promote once, not on hover, so hovering never triggers a repaint of the
+     whole stacking context. */
+  transform: translateZ(0);
+}
+
+.hairline {
+  height: 1px;
+  background: var(--line);
+  border: 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.4em 0.9em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: var(--step--1);
+  color: color-mix(in oklab, var(--paper) 80%, transparent);
+  white-space: nowrap;
+}
+
+/* Buttons ---------------------------------------------------------------- */
+
+.btn {
+  --btn-bg: var(--accent);
+  --btn-fg: var(--accent-ink);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  padding: 0.95em 1.6em;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-size: var(--step-0);
+  font-weight: 560;
+  line-height: 1;
+  cursor: pointer;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-mid) var(--ease-out);
+}
+
+/* The wipe is a pseudo-element scaling on the compositor — no width animation,
+   so no layout work per frame. */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in oklab, var(--btn-fg) 16%, transparent);
+  transform: translate3d(0, 101%, 0);
+  transition: transform var(--dur-mid) var(--ease-out);
+}
+
+.btn:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow: 0 1.2vh 3vh -1vh color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+.btn:hover::after {
+  transform: translate3d(0, 0, 0);
+}
+
+.btn:active {
+  transform: translate3d(0, 0, 0);
+}
+
+.btn--ghost {
+  --btn-bg: transparent;
+  --btn-fg: var(--paper);
+  border-color: var(--line-strong);
+}
+
+.btn--ghost:hover {
+  box-shadow: none;
+  border-color: var(--paper);
+}
+
+/* Text link with an underline that wipes in from the left. */
+.link {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 2px;
+}
+
+.link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-mid) var(--ease-out);
+}
+
+.link:hover::after,
+.link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* ==========================================================================
+   Motion primitives
+
+   Rules for everything below:
+   1. Animate `transform` and `opacity` only — both are compositor properties,
+      so frames never touch layout or paint.
+   2. Prefer native scroll-driven animations (`animation-timeline`). They run
+      off the main thread entirely; a JS fallback covers older browsers.
+   3. `will-change` is scoped to elements that are actually about to move, and
+      dropped once they have landed.
+   ========================================================================== */
+
+/* --- entrance reveal (IntersectionObserver adds .is-inview) ------------- */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, var(--reveal-y, 2.2vh), 0) scale(var(--reveal-scale, 1));
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: transform, opacity;
+}
+
+[data-reveal].is-inview {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+/* Once it has arrived, stop reserving a compositor layer for it. */
+[data-reveal].is-settled {
+  will-change: auto;
+}
+
+/* --- hero entrance ------------------------------------------------------ */
+
+/* Each line is masked by its own overflow-clip parent and slides up from
+   under it, staggered by index. */
+.reveal-mask {
+  display: block;
+  overflow: clip;
+  /* Room for descenders so `y` and `g` are not shaved off by the clip. */
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.reveal-line {
+  display: block;
+  transform: translate3d(0, 110%, 0);
+  animation: line-up 1.05s var(--ease-out) forwards;
+  animation-delay: calc(var(--stagger, 90ms) * var(--i, 0) + var(--lead, 120ms));
+}
+
+@keyframes line-up {
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.fade-up {
+  opacity: 0;
+  transform: translate3d(0, 1.6vh, 0);
+  animation: fade-up var(--dur-slow) var(--ease-out) forwards;
+  animation-delay: calc(var(--stagger, 90ms) * var(--i, 0) + var(--lead, 120ms));
+}
+
+@keyframes fade-up {
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* --- scroll-linked effects --------------------------------------------- */
+
+/* Parallax layers. Depth is set per element with --depth (in vh). */
+[data-parallax] {
+  will-change: transform;
+}
+
+/* Media that settles from slightly over-scaled to 1:1 as it enters. */
+.media-scale > * {
+  transform: scale(var(--media-from, 1.14));
+  will-change: transform;
+}
+
+/* Progress bar, driven by document scroll. */
+.scroll-progress {
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+@supports (animation-timeline: view()) {
+  [data-parallax] {
+    animation: parallax-y linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 100%;
+  }
+
+  @keyframes parallax-y {
+    from {
+      transform: translate3d(0, var(--depth, 4vh), 0);
+    }
+    to {
+      transform: translate3d(0, calc(var(--depth, 4vh) * -1), 0);
+    }
+  }
+
+  .media-scale > * {
+    animation: media-settle linear both;
+    animation-timeline: view();
+    animation-range: entry 15% cover 45%;
+  }
+
+  @keyframes media-settle {
+    to {
+      transform: scale(1);
+    }
+  }
+
+  .scroll-progress {
+    animation: progress-x linear both;
+    animation-timeline: scroll(root block);
+  }
+
+  @keyframes progress-x {
+    to {
+      transform: scaleX(1);
+    }
+  }
+}
+
+/* No native scroll timelines (Safari < 26, Firefox): the JS fallback in
+   lib/scroll-fx.ts drives [data-parallax] and .media-scale instead, and the
+   progress bar is simply hidden rather than faked. */
+@supports not (animation-timeline: view()) {
+  .scroll-progress {
+    display: none;
+  }
+}
+
+/* --- marquee ----------------------------------------------------------- */
+
+.marquee {
+  display: flex;
+  overflow: clip;
+  gap: 0;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+}
+
+.marquee__track {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--gap-lg);
+  padding-right: var(--gap-lg);
+  animation: marquee var(--marquee-dur, 34s) linear infinite;
+  will-change: transform;
+}
+
+.marquee:hover .marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+/* ==========================================================================
+   Reduced motion — the honest version. Nothing moves, nothing is hidden.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-reveal],
+  .reveal-line,
+  .fade-up {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .media-scale > * {
+    transform: none !important;
+  }
+
+  .marquee__track {
+    animation: none !important;
+  }
+
+  .scroll-progress {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Accessibility utilities
+   ========================================================================== */
+
+.skip-link {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  padding: 0.75rem 1.1rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 0 0 0.6rem 0;
+  font-size: var(--step--1);
+  font-weight: 600;
+  /* Off-screen until focused, but still in the tab order. */
+  transform: translate3d(0, -110%, 0);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.skip-link:focus-visible {
+  transform: translate3d(0, 0, 0);
+}
+
+/* ==========================================================================
+   Swiper overrides
+
+   Swiper's stylesheet is imported inside the carousel Client Component, and
+   Next injects component-level CSS *after* the stylesheet imported by the root
+   layout. That means globals.css loses to Swiper on equal specificity, so
+   these selectors are deliberately one class more specific than Swiper's own
+   (`.swiper .swiper-pagination-progressbar` beats
+   `.swiper-horizontal > .swiper-pagination-progressbar`). Bumping specificity
+   here is less fragile than relying on import order.
+   ========================================================================== */
+
+.swiper {
+  /* Slides are cards of differing text length — stretch them to match. */
+  align-items: stretch;
+}
+
+.swiper .swiper-wrapper {
+  align-items: stretch;
+}
+
+.swiper .swiper-slide {
+  height: auto;
+}
+
+/* Swiper pins the progressbar to the top of the container by default; we want
+   it beneath the cards, where it reads as a scroll position indicator. */
+.swiper .swiper-pagination.swiper-pagination-progressbar {
+  top: auto;
+  bottom: 0;
+  height: 2px;
+  background: var(--line);
+}
+
+.swiper .swiper-pagination-progressbar .swiper-pagination-progressbar-fill {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.swiper:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
 }
